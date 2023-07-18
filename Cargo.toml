@@ -20,7 +20,7 @@ doctest = false
 [workspace]
 members = [
     "crates/api",
-    "crates/influxdb",
+    "crates/db",
     "crates/routes",
     "crates/domain"
 ]
@@ -28,6 +28,7 @@ members = [
 [workspace.dependencies]
 statty_routes = { version = "=0.0.1", path = "./crates/routes"}
 actix-web = "4"
+diesel = { version = "2.1.0", features = ["postgres"] }
 
 [dependencies]
 statty_routes = { workspace = true }

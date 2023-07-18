@@ -1,5 +1,5 @@
 [package]
-name = "influxdb"
+name = "statty_db"
 version.workspace = true
 edition.workspace = true
 description.workspace = true
@@ -7,9 +7,9 @@ license.workspace = true
 repository.workspace = true
 
 [lib]
-name = "influxdb"
+name = "statty_api"
 path = "src/lib.rs"
 doctest = false
 
-
 [dependencies]
+diesel = { workspace = true }
