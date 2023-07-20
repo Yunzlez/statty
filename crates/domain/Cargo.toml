@@ -14,3 +14,4 @@ doctest = false
 [dependencies]
 diesel = { workspace = true }
 serde = { workspace = true }
+time = { workspace = true }

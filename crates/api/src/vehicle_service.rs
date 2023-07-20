@@ -8,7 +8,6 @@ use std::io::Result;
 pub async fn list_vehicles(_req: HttpRequest) -> Result<HttpResponse> {
     let connection = &mut get_db_conn();
 
-
     let results = vehicles
         .limit(10)
         .select(Vehicle::as_select())
