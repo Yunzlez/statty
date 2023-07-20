@@ -13,4 +13,5 @@ doctest = false
 
 
 [dependencies]
+statty_api = { workspace = true }
 actix-web = { workspace = true }

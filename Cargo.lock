@@ -453,6 +453,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "dotenvy"
+version = "0.15.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1aaf95b3e5c8f23aa320147307562d361db0ae0d51242340f558153b4eb2439b"
+
+[[package]]
 name = "encoding_rs"
 version = "0.8.32"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -928,6 +934,20 @@ name = "serde"
 version = "1.0.171"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "30e27d1e4fd7659406c492fd6cfaf2066ba8773de45ca75e855590f856dc34a9"
+dependencies = [
+ "serde_derive",
+]
+
+[[package]]
+name = "serde_derive"
+version = "1.0.171"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "389894603bd18c46fa56231694f8d827779c0951a667087194cf9de94ed24682"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.26",
+]
 
 [[package]]
 name = "serde_json"
@@ -1008,23 +1028,37 @@ dependencies = [
 [[package]]
 name = "statty_api"
 version = "0.0.1"
+dependencies = [
+ "actix-web",
+ "diesel",
+ "serde",
+ "serde_json",
+ "statty_db",
+ "statty_domain",
+]
 
 [[package]]
 name = "statty_db"
 version = "0.0.1"
 dependencies = [
  "diesel",
+ "dotenvy",
 ]
 
 [[package]]
 name = "statty_domain"
 version = "0.0.1"
+dependencies = [
+ "diesel",
+ "serde",
+]
 
 [[package]]
 name = "statty_routes"
 version = "0.0.1"
 dependencies = [
  "actix-web",
+ "statty_api",
 ]
 
 [[package]]

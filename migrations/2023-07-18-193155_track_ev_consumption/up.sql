@@ -1,12 +1,15 @@
 -- Your SQL goes here
-create table vehicle (
+create table vehicles (
     id serial primary key,
-    name text not null
-)
-create table charge_session (
+    name text not null,
+    battery_capacity int not null
+);
+
+create table charge_sessions (
     id serial primary key,
     date timestamp not null,
     vehicle_id int not null,
+    end_soc int not null,
     energy int not null,
     odometer int not null
-)
+);

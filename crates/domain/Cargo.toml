@@ -12,3 +12,5 @@ path = "src/lib.rs"
 doctest = false
 
 [dependencies]
+diesel = { workspace = true }
+serde = { workspace = true }

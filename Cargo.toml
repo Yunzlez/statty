@@ -27,8 +27,14 @@ members = [
 
 [workspace.dependencies]
 statty_routes = { version = "=0.0.1", path = "./crates/routes"}
+statty_domain = { version = "=0.0.1", path = "./crates/domain"}
+statty_db = { version = "=0.0.1", path = "./crates/db"}
+statty_api = { version = "=0.0.1", path = "./crates/api"}
 actix-web = "4"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0" }
 diesel = { version = "2.1.0", features = ["postgres"] }
+dotenvy = "0.15"
 
 [dependencies]
 statty_routes = { workspace = true }

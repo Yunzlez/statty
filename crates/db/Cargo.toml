@@ -7,9 +7,10 @@ license.workspace = true
 repository.workspace = true
 
 [lib]
-name = "statty_api"
+name = "statty_db"
 path = "src/lib.rs"
 doctest = false
 
 [dependencies]
 diesel = { workspace = true }
+dotenvy = { workspace = true }
