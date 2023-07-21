@@ -6,7 +6,7 @@ diesel::table! {
         date -> Timestamp,
         vehicle_id -> Int4,
         end_soc -> Int4,
-        energy -> Int4,
+        energy -> Float8,
         odometer -> Int4,
     }
 }

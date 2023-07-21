@@ -10,6 +10,6 @@ create table charge_sessions (
     date timestamp not null,
     vehicle_id int not null,
     end_soc int not null,
-    energy int not null,
+    energy float not null,
     odometer int not null
 );
