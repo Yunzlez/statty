@@ -1,5 +1,5 @@
 [package]
-name = "statty_db"
+name = "statty_common"
 version.workspace = true
 edition.workspace = true
 description.workspace = true
@@ -7,7 +7,7 @@ license.workspace = true
 repository.workspace = true
 
 [lib]
-name = "statty_db"
+name = "statty_common"
 path = "src/lib.rs"
 doctest = false
 

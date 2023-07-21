@@ -20,3 +20,4 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 statty_db = { workspace = true }
 statty_domain = { workspace = true }
+statty_common = { workspace = true }

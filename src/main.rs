@@ -14,13 +14,21 @@
    limitations under the License.
  */
 use actix_web::{App, HttpServer};
+use actix_web::web::Data;
+use dotenvy::dotenv;
+use statty_common::context::Context;
+use statty_db::db_conn::get_db_pool;
 use statty_routes::routes::config;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    dotenv().ok();
+    env_logger::init();
+
     HttpServer::new(|| {
         App::new()
             .configure(|cfg| config(cfg))
+            .app_data(Data::new(Context::new_context(get_db_pool())))
     })
         .bind(("127.0.0.1", 8080))?
         .run()

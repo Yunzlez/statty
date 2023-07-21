@@ -1,13 +1,15 @@
-use actix_web::{HttpRequest, HttpResponse};
-use statty_domain::vehicle::Vehicle;
-use statty_domain::schema::vehicles::dsl::vehicles;
-use statty_db::db_conn::get_db_conn;
-use diesel::prelude::*;
 use std::io::Result;
 
-pub async fn list_vehicles(_req: HttpRequest) -> Result<HttpResponse> {
-    let connection = &mut get_db_conn();
+use actix_web::HttpResponse;
+use actix_web::web::Data;
+use diesel::prelude::*;
 
+use statty_common::context::Context;
+use statty_domain::schema::vehicles::dsl::vehicles;
+use statty_domain::vehicle::Vehicle;
+
+pub async fn list_vehicles(data: Data<Context>) -> Result<HttpResponse> {
+    let connection = &mut data.clone().get_pool().get().unwrap();
     let results = vehicles
         .limit(10)
         .select(Vehicle::as_select())

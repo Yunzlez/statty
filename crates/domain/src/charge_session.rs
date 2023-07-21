@@ -1,4 +1,4 @@
-use time::Date;
+use std::time::SystemTime;
 use diesel::prelude::*;
 use serde::{Serialize,Deserialize};
 
@@ -8,7 +8,7 @@ use serde::{Serialize,Deserialize};
 #[derive(Serialize,Deserialize)]
 pub struct ChargeSession {
     pub id: i32,
-    pub date: Date,
+    pub date: SystemTime,
     pub vehicle_id: i32,
     pub end_soc: i32,
     pub energy: i32,
