@@ -16,6 +16,7 @@ diesel::table! {
         id -> Int4,
         name -> Text,
         battery_capacity -> Int4,
+        charge_limit -> Float8,
     }
 }
 

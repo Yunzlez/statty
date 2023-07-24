@@ -25,7 +25,7 @@ pub async fn list_vehicles(data: Data<Context>) -> Result<HttpResponse> {
 pub async fn vehicle_details(data: Data<Context>, path: Path<i32>) -> Result<HttpResponse> {
     let conn = &mut data.clone().get_pool().get().unwrap();
     let res = vehicles
-        .filter(id.eq(path))
+        .filter(id.eq(path.into_inner()))
         .select(Vehicle::as_select())
         .load(conn)
         .expect("Failed to retrieve Vehicle data");

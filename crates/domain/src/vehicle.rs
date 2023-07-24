@@ -8,7 +8,8 @@ use serde::{Serialize,Deserialize};
 pub struct Vehicle {
     pub id: i32,
     pub name: String,
-    pub battery_capacity: i32
+    pub battery_capacity: i32,
+    pub charge_limit: f64
 }
 
 

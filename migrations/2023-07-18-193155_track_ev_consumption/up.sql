@@ -2,7 +2,8 @@
 create table vehicles (
     id serial primary key,
     name text not null,
-    battery_capacity int not null
+    battery_capacity int not null,
+    charge_limit float not null
 );
 
 create table charge_sessions (
