@@ -1144,6 +1144,7 @@ dependencies = [
 name = "statty_db"
 version = "0.0.1"
 dependencies = [
+ "actix-web",
  "diesel",
 ]
 

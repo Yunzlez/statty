@@ -1,24 +1,51 @@
+use std::collections::HashMap;
 use std::io::Result;
 use std::time::SystemTime;
 
 use actix_web::HttpResponse;
-use actix_web::web::{Data, Json};
+use actix_web::web::{Data, Json, Query, Path};
 use diesel::prelude::*;
 
 use statty_common::context::Context;
+use statty_db::util::get_page_params;
 use statty_domain::charge_session::{ChargeSession, NewChargeSession};
+use statty_domain::meta::{PagedList, PageMeta};
 use statty_domain::schema::charge_sessions::dsl::charge_sessions;
+use statty_domain::schema::charge_sessions::vehicle_id;
 
-pub async fn list_sessions(ctx: Data<Context>) -> Result<HttpResponse> {
+pub async fn list_sessions(ctx: Data<Context>, path: Path<i32>, query: Query<HashMap<String, String>>) -> Result<HttpResponse> {
     let conn = &mut ctx.clone().get_pool().get().unwrap();
+
+    let page_params = get_page_params(query);
+    let path_param = &path.into_inner();
+
+
+    let total: i64 = charge_sessions
+        .filter(vehicle_id.eq(path_param))
+        .count()
+        .get_result(conn)
+        .expect("Failed to retrieve sessions");
+
     let results = charge_sessions
-        .limit(100)
+        .limit(page_params.1)
+        .offset(page_params.0 * page_params.1)
+        .filter(vehicle_id.eq(path_param))
         .select(ChargeSession::as_select())
         .load(conn)
         .expect("Failed to retrieve sessions");
 
     println!("Retrieved {} sessions", results.len());
-    return Ok(HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&results).unwrap()));
+
+    let list = PagedList {
+        items: &results,
+        meta: PageMeta {
+            page: page_params.0,
+            total_items: total,
+            total_pages: ((total/page_params.1) as f64).floor() as i32
+        }
+    };
+
+    return Ok(HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&list).unwrap()));
 }
 
 pub async fn add_session(ctx: Data<Context>, data: Json<NewChargeSession>) -> Result<HttpResponse> {
