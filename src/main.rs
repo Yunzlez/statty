@@ -13,6 +13,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  */
+use actix_cors::Cors;
 use actix_web::{App, HttpServer};
 use actix_web::web::Data;
 use dotenvy::dotenv;
@@ -26,7 +27,11 @@ async fn main() -> std::io::Result<()> {
     env_logger::init();
 
     HttpServer::new(|| {
+        let cors = Cors::default()
+            .allow_any_origin();
+
         App::new()
+            .wrap(cors)
             .configure(|cfg| config(cfg))
             .app_data(Data::new(Context::new_context(get_db_pool())))
     })

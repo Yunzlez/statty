@@ -18,7 +18,7 @@ pub fn config(cfg: &mut web::ServiceConfig) {
                             .route("", web::put().to(todo))
                             .route("", web::delete().to(todo))
                             .service(
-                                web::scope("/chargesessions")
+                                web::scope("/charging_sessions")
                                     .route("", web::get().to(list_sessions))
                                     .route("", web::post().to(add_session))
                                     .service(
