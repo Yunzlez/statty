@@ -50,6 +50,9 @@
 import {onMounted, ref} from "vue";
 import {SessionApi} from "../api/sessionApi.js";
 
+//todo add delete button
+//todo update on insert
+
 let vehicle = ref();
 vehicle.value = {
   id: 1,

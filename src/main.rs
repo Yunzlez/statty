@@ -15,6 +15,7 @@
  */
 use actix_cors::Cors;
 use actix_web::{App, HttpServer};
+use actix_web::http::header;
 use actix_web::web::Data;
 use dotenvy::dotenv;
 use statty_common::context::Context;
@@ -28,7 +29,10 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(|| {
         let cors = Cors::default()
-            .allow_any_origin();
+            .allow_any_origin()
+            .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
+            .allowed_headers(vec![header::CONTENT_TYPE, header::ACCEPT, header::AUTHORIZATION])
+            .max_age(3600);
 
         App::new()
             .wrap(cors)

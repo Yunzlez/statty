@@ -15,9 +15,11 @@ const open = ref(false);
   <div class="container mx-auto">
     <SessionModal @toggleModal="open = false" :open="open"></SessionModal>
     <Statistics class="py-5"></Statistics>
-    <SessionList @toggleModal="open = !open" class="py-5"></SessionList>
-    <Footer class="absolute inset-x-0 bottom-0"></Footer>
+    <SessionList @toggleModal="open = !open" class="py-5 "></SessionList>
   </div>
+  <footer>
+    <Footer></Footer>
+  </footer>
 </template>
 
 <style scoped>
