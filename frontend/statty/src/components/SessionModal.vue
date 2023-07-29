@@ -31,14 +31,13 @@
                           <div>
                             <label for="project-name" class="block text-sm font-medium leading-6 text-gray-900">Date</label>
                             <div class="mt-2">
-<!--                              <vue-tailwind-datepicker as-single v-model="date" />-->
-                              <input type="text" name="project-name" id="project-name" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" />
+                              <VueDatePicker v-model="session.date" :format="format" :enable-time-picker="false"></VueDatePicker>
                             </div>
                           </div>
                           <div>
                             <label for="price" class="block text-sm font-medium leading-6 text-gray-900">Energy Added</label>
                             <div class="relative mt-2 rounded-md shadow-sm">
-                              <input type="text" name="price" id="price" class="block w-full rounded-md border-0 py-1.5 pl-7 pr-12 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" placeholder="0.00" aria-describedby="price-currency" />
+                              <input v-model="session.energy" type="number" name="energy" id="energy" class="block w-full rounded-md border-0 py-1.5 pl-7 pr-12 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" placeholder="0.00" aria-describedby="price-currency" />
                               <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
                                 <span class="text-gray-500 sm:text-sm" id="price-currency">kWh</span>
                               </div>
@@ -47,7 +46,7 @@
                           <div>
                             <label for="price" class="block text-sm font-medium leading-6 text-gray-900">Odometer</label>
                             <div class="relative mt-2 rounded-md shadow-sm">
-                              <input type="text" name="price" id="price" class="block w-full rounded-md border-0 py-1.5 pl-7 pr-12 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" placeholder="0.00" aria-describedby="price-currency" />
+                              <input v-model="session.odometer" type="number" name="odometer" id="odometer" class="block w-full rounded-md border-0 py-1.5 pl-7 pr-12 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" placeholder="0.00" aria-describedby="price-currency" />
                               <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
                                 <span class="text-gray-500 sm:text-sm" id="price-currency">km</span>
                               </div>
@@ -56,7 +55,7 @@
                           <div>
                             <label for="price" class="block text-sm font-medium leading-6 text-gray-900">Ending State of Charge</label>
                             <div class="relative mt-2 rounded-md shadow-sm">
-                              <input type="text" name="price" id="price" class="block w-full rounded-md border-0 py-1.5 pl-7 pr-12 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" placeholder="0.00" aria-describedby="price-currency" />
+                              <input v-model="session.end_soc" type="number" name="end_soc" id="end_soc" class="block w-full rounded-md border-0 py-1.5 pl-7 pr-12 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" placeholder="0.00" aria-describedby="price-currency" />
                               <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
                                 <span class="text-gray-500 sm:text-sm" id="price-currency">%</span>
                               </div>
@@ -67,8 +66,8 @@
                     </div>
                   </div>
                   <div class="flex flex-shrink-0 justify-end px-4 py-4">
-                    <button type="button" class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50" @click="$emit('toggleModal')">Cancel</button>
-                    <button type="submit" class="ml-4 inline-flex justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Save</button>
+                    <button type="button" class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50" @click="reset">Cancel</button>
+                    <button type="button" class="ml-4 inline-flex justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" @click="submit">Save</button>
                   </div>
                 </form>
               </DialogPanel>
@@ -84,47 +83,37 @@
 import {Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot} from '@headlessui/vue'
 import {XMarkIcon} from '@heroicons/vue/24/outline'
 import {ref} from "vue";
-import VueTailwindDatepicker from "vue-tailwind-datepicker";
+import {SessionApi} from "../api/sessionApi.js";
 
 const props = defineProps(['open']);
+const emit = defineEmits(['toggleModal','submitSuccess'])
 
-const date = ref('');
+const format = (date) => {
+  return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`
+}
 
-const team = [
-  {
-    name: 'Tom Cook',
-    email: 'tom.cook@example.com',
-    href: '#',
-    imageUrl:
-        'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-  },
-  {
-    name: 'Whitney Francis',
-    email: 'whitney.francis@example.com',
-    href: '#',
-    imageUrl:
-        'https://images.unsplash.com/photo-1517365830460-955ce3ccd263?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-  },
-  {
-    name: 'Leonard Krasner',
-    email: 'leonard.krasner@example.com',
-    href: '#',
-    imageUrl:
-        'https://images.unsplash.com/photo-1519345182560-3f2917c472ef?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-  },
-  {
-    name: 'Floyd Miles',
-    email: 'floyd.miles@example.com',
-    href: '#',
-    imageUrl:
-        'https://images.unsplash.com/photo-1463453091185-61582044d556?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-  },
-  {
-    name: 'Emily Selman',
-    email: 'emily.selman@example.com',
-    href: '#',
-    imageUrl:
-        'https://images.unsplash.com/photo-1502685104226-ee32379fefbe?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-  },
-]
+let session = ref({
+  date: new Date(),
+  energy: undefined,
+  odometer: undefined,
+  end_soc: undefined
+});
+
+const reset = () => {
+  console.log("reset time");
+  session = ref({
+    date: new Date(),
+    energy: undefined,
+    odometer: undefined,
+    end_soc: undefined
+  });
+  emit('toggleModal');
+}
+
+const submit = async () => {
+  //todo validate
+  await SessionApi.addSession(1, session);
+  reset();
+  emit('submitSuccess')
+}
 </script>

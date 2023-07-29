@@ -27,7 +27,7 @@
               </thead>
               <tbody class="divide-y divide-gray-200 bg-white">
               <tr v-for="session in sessions" :key="session.id">
-                <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">{{ session.date.secs_since_epoch }}</td>
+                <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">{{ session.date }}</td>
                 <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ session.energy }} kWh</td>
                 <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ session.odometer }} km</td>
                 <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ session.end_soc }} %</td>
@@ -47,7 +47,8 @@
 </template>
 
 <script setup>
-import {ref} from "vue";
+import {onMounted, ref} from "vue";
+import {SessionApi} from "../api/sessionApi.js";
 
 let vehicle = ref();
 vehicle.value = {
@@ -55,33 +56,9 @@ vehicle.value = {
   name: "Volvo C40"
 };
 let sessions = ref();
-sessions.value = [
-  {
-    "id": 1,
-    "date": {
-      "secs_since_epoch": 1690231158,
-      "nanos_since_epoch": 989222000
-    },
-    "vehicle_id": 1,
-    "end_soc": 81,
-    "energy": 31.96,
-    "odometer": 838
-  },
-  {
-    "id": 2,
-    "date": {
-      "secs_since_epoch": 1690231173,
-      "nanos_since_epoch": 470221000
-    },
-    "vehicle_id": 1,
-    "end_soc": 90,
-    "energy": 35.95,
-    "odometer": 995
-  }
-];
 
-const people = [
-  { name: 'Lindsay Walton', title: 'Front-end Developer', email: 'lindsay.walton@example.com', role: 'Member' },
-  // More people...
-]
+onMounted(async () => {
+  sessions.value = (await SessionApi.getSessions(1)).data.items;
+});
+
 </script>

@@ -13,7 +13,6 @@ const open = ref(false);
 <template>
   <Header class="pt-5"></Header>
   <div class="container mx-auto">
-    <h1>{{ open }}</h1>
     <SessionModal @toggleModal="open = false" :open="open"></SessionModal>
     <Statistics class="py-5"></Statistics>
     <SessionList @toggleModal="open = !open" class="py-5"></SessionList>
