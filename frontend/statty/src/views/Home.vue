@@ -7,15 +7,23 @@ import SessionModal from "../components/SessionModal.vue";
 import {ref} from "vue";
 
 const open = ref(false);
+const statisticsComponent = ref(null);
+const sessionListComponent = ref(null);
 
+
+const updateData = () => {
+  console.log("update trigger")
+  statisticsComponent.value.refresh();
+  sessionListComponent.value.refresh();
+}
 </script>
 
 <template>
   <Header class="pt-5"></Header>
   <div class="container mx-auto">
-    <SessionModal @toggleModal="open = false" :open="open"></SessionModal>
-    <Statistics class="py-5"></Statistics>
-    <SessionList @toggleModal="open = !open" class="py-5 "></SessionList>
+    <SessionModal @toggleModal="open = false" @submitSuccess="updateData" :open="open"></SessionModal>
+    <Statistics ref="statisticsComponent" class="py-5"></Statistics>
+    <SessionList ref="sessionListComponent" @updateList="updateData" @toggleModal="open = !open" class="py-5"></SessionList>
   </div>
   <footer>
     <Footer></Footer>

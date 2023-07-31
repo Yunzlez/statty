@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::io::Result;
+use actix_web::http::StatusCode;
 
 use actix_web::HttpResponse;
 use actix_web::web::{Data, Json, Path, Query};
@@ -7,10 +8,11 @@ use diesel::prelude::*;
 use time::OffsetDateTime;
 
 use statty_common::context::Context;
+use statty_common::http_utils::http_error;
 use statty_db::util::get_page_params;
 use statty_domain::charge_session::{ChargeSession, ChargeSessionDto, from_dto, to_dto};
 use statty_domain::meta::{PagedList, PageMeta};
-use statty_domain::schema::charge_sessions::{date, vehicle_id};
+use statty_domain::schema::charge_sessions::{date, id, vehicle_id};
 use statty_domain::schema::charge_sessions::dsl::charge_sessions;
 
 pub async fn list_sessions(ctx: Data<Context>, path: Path<i32>, query: Query<HashMap<String, String>>) -> Result<HttpResponse> {
@@ -79,4 +81,23 @@ pub async fn add_session(ctx: Data<Context>, data: Json<ChargeSessionDto>) -> Re
             .content_type("application/json")
             .body(serde_json::to_string(&to_dto(res)).unwrap())
     );
+}
+
+pub async fn delete_session(ctx: Data<Context>, path: Path<(i32, i32)>) -> Result<HttpResponse> {
+    let conn = &mut ctx.clone().get_pool().get().unwrap();
+
+    let path_params = &path.into_inner();
+
+    println!("deleting session {} for vehicle {}", path_params.1, path_params.0);
+
+    let deleted = diesel::delete(charge_sessions)
+        .filter(vehicle_id.eq(path_params.0))
+        .filter(id.eq(path_params.1))
+        .execute(conn)
+        .expect("Failed to delete charge session");
+
+    if deleted == 0 {
+        return http_error(StatusCode::NOT_FOUND, "No session found")
+    }
+    Ok(HttpResponse::NoContent().finish())
 }

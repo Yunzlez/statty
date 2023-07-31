@@ -24,18 +24,15 @@
 
 <script setup>
 import { ArrowDownIcon, ArrowUpIcon } from '@heroicons/vue/20/solid'
-import {onMounted, ref} from 'vue';
+import {markRaw, onMounted, ref} from 'vue';
 import {StatsApi} from "../api/statsApi.js";
-
-// const stats = [
-//   { id: 1, name: 'Average consumption since last charge', stat: '3.14 kWh', previousStat: '3 kWh', change: '5%', changeType: 'increase' },
-//   { id: 2, name: 'Average consumption overall', stat: '3.14 kWh', previousStat: '3 kWh', change: '5%', changeType: 'increase' },
-//   { id: 3, name: 'Registered sessions', stat: '96', previousStat: '93', change: '3', changeType: 'increase' },
-//   { id: 4, name: 'Total km driven', stat: '1500 km', previousStat: '1250', change: '250', changeType: 'increase' },
-// ]
 
 let stats = ref(0);
 onMounted(() => {
+  refresh();
+});
+
+const refresh = async () => {
   StatsApi.getStats(1).then(res => {
     let apiStats = [];
     apiStats.push({ id: 1, name: 'Average consumption since last charge', stat: Number(res.data.avg_consumption_last_charge.toFixed(2)) , previousStat: '', change: '', changeType: 'increase', unit: 'kWh' });
@@ -45,5 +42,8 @@ onMounted(() => {
 
     stats.value = apiStats;
   });
-});
+}
+
+defineExpose({refresh});
+
 </script>

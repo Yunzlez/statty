@@ -1,7 +1,7 @@
 use io::Result;
 use std::io;
 use actix_web::{HttpRequest, HttpResponse, web};
-use statty_api::charge_service::{add_session, list_sessions};
+use statty_api::charge_service::{add_session, delete_session, list_sessions};
 use statty_api::statistics::get_stats;
 use statty_api::vehicle_service::{list_vehicles, vehicle_details};
 
@@ -25,7 +25,7 @@ pub fn config(cfg: &mut web::ServiceConfig) {
                                         web::scope("/{sessionId}")
                                             .route("", web::get().to(todo))
                                             .route("", web::put().to(todo))
-                                            .route("", web::delete().to(todo))
+                                            .route("", web::delete().to(delete_session))
                                     )
                             ).service(
                             web::scope("/stats")

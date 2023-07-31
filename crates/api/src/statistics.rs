@@ -50,7 +50,7 @@ pub async fn get_stats(ctx: Data<Context>, path: Path<i32>) -> Result<HttpRespon
 
     //throw an error if less than 2 sessions are available
     if results.len() < 2 {
-        return http_error(StatusCode::NOT_FOUND, "Not enough data available to calculate statistics".to_string());
+        return http_error(StatusCode::NOT_FOUND, "Not enough data available to calculate statistics");
     }
 
     //battery capacity in kWh
