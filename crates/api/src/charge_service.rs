@@ -10,8 +10,8 @@ use statty_common::context::Context;
 use statty_db::util::get_page_params;
 use statty_domain::charge_session::{ChargeSession, ChargeSessionDto, from_dto, to_dto};
 use statty_domain::meta::{PagedList, PageMeta};
+use statty_domain::schema::charge_sessions::{date, vehicle_id};
 use statty_domain::schema::charge_sessions::dsl::charge_sessions;
-use statty_domain::schema::charge_sessions::{vehicle_id, date};
 
 pub async fn list_sessions(ctx: Data<Context>, path: Path<i32>, query: Query<HashMap<String, String>>) -> Result<HttpResponse> {
     //todo check vehicle

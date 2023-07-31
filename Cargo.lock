@@ -1155,7 +1155,9 @@ dependencies = [
 name = "statty_common"
 version = "0.0.1"
 dependencies = [
+ "actix-web",
  "diesel",
+ "statty_domain",
 ]
 
 [[package]]

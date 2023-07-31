@@ -13,3 +13,5 @@ doctest = false
 
 [dependencies]
 diesel = { workspace = true }
+actix-web = { workspace = true }
+statty_domain = { workspace = true }

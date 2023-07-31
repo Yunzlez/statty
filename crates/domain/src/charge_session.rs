@@ -1,11 +1,12 @@
 use diesel::prelude::*;
+use diesel::{QueryId};
 use serde::{Deserialize, Serialize};
 use time::Date;
 use time::serde as tserde;
 
 tserde::format_description!(date_format, Date, "[year]-[month]-[day]");
 
-#[derive(Queryable,Selectable)]
+#[derive(Queryable,Selectable,QueryId)]
 #[diesel(table_name = crate::schema::charge_sessions)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct ChargeSession {
