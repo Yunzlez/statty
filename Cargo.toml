@@ -36,10 +36,15 @@ actix-web = "4"
 actix-cors = "0.6.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0" }
-diesel = { version = "2.1.0", features = ["postgres", "r2d2", "time"] }
+serde_with = { version = "3.1", features = ["chrono"] }
+diesel = { version = "2.1.0", features = ["postgres", "r2d2", "chrono"] }
 dotenvy = "0.15"
 time = { version = "0.3", features = ["serde"]}
+chrono = { version = "0.4", features = ["serde"]}
 env_logger = "0.10.0"
+regex = "1.9"
+lazy_static = "1.4"
+nom = "7.1"
 
 [dependencies]
 statty_routes = { workspace = true }

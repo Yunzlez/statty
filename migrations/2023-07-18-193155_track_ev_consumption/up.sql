@@ -8,7 +8,7 @@ create table vehicles (
 
 create table charge_sessions (
     id serial primary key,
-    date date not null,
+    date timestamp not null,
     vehicle_id int not null,
     end_soc int not null,
     energy float not null,

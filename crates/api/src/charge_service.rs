@@ -5,7 +5,6 @@ use actix_web::http::StatusCode;
 use actix_web::HttpResponse;
 use actix_web::web::{Data, Json, Path, Query};
 use diesel::prelude::*;
-use time::OffsetDateTime;
 
 use statty_common::context::Context;
 use statty_common::http_utils::http_error;
@@ -21,7 +20,6 @@ pub async fn list_sessions(ctx: Data<Context>, path: Path<i32>, query: Query<Has
 
     let page_params = get_page_params(query);
     let path_param = &path.into_inner();
-
 
     let total: i64 = charge_sessions
         .filter(vehicle_id.eq(path_param))
@@ -65,7 +63,7 @@ pub async fn add_session(ctx: Data<Context>, data: Json<ChargeSessionDto>) -> Re
 
     let mut new_session = data.into_inner();
     if new_session.date.is_none() {
-        new_session.date = Some(OffsetDateTime::now_utc().date());
+        new_session.date = Some(chrono::offset::Local::now().naive_local().date());
     }
 
     println!("Insert {}", serde_json::to_string(&new_session).unwrap());

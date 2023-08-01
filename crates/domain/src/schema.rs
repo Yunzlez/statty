@@ -3,7 +3,7 @@
 diesel::table! {
     charge_sessions (id) {
         id -> Int4,
-        date -> Date,
+        date -> Timestamp,
         vehicle_id -> Int4,
         end_soc -> Int4,
         energy -> Float8,
