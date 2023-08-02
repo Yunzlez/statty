@@ -47,6 +47,23 @@
               </tr>
               </tbody>
             </table>
+            <nav class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6" aria-label="Pagination">
+              <div class="hidden sm:block">
+                <p class="text-sm text-gray-700">
+                  Showing
+                  <span class="font-medium">{{ firstElementIndex }}</span>
+                  to
+                  <span class="font-medium">{{ lastElementIndex }}</span>
+                  of
+                  <span class="font-medium">{{ pageData?.total_items }}</span>
+                  results
+                </p>
+              </div>
+              <div class="flex flex-1 justify-between sm:justify-end">
+                <a href="#" v-if="!firstPage" class="relative inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus-visible:outline-offset-0">Previous</a>
+                <a href="#" v-if="!lastPage" class="relative ml-3 inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus-visible:outline-offset-0">Next</a>
+              </div>
+            </nav>
           </div>
         </div>
       </div>
@@ -55,10 +72,14 @@
 </template>
 
 <script setup>
-import {onMounted, ref, watch} from "vue";
+import {computed, onMounted, ref, watch} from "vue";
 import {SessionApi} from "../api/sessionApi.js";
 
 //todo update on insert
+
+onMounted(async () => {
+  await refresh();
+});
 
 const props = defineProps({
   period: String
@@ -75,12 +96,32 @@ vehicle.value = {
   name: "Volvo C40"
 };
 let sessions = ref();
+let pageData = ref({});
+let pageSize = 10;
+
+let firstElementIndex = computed(() => {
+  return pageData.value.page * pageSize + 1;
+});
+
+let lastElementIndex = computed(() => {
+  //if it's the last page
+  if (lastPage) {
+    return pageData.value.total_items;
+  }
+
+  return (pageData.value.page + 1) * pageSize;
+});
+
+//computed properties for first and last page
+let firstPage = computed(() => {
+  return pageData.value.page === 0;
+});
+
+let lastPage = computed(() => {
+  return pageData.value.page + 1 >= pageData.value.total_pages;
+});
 
 const emit = defineEmits(['updateList'])
-
-onMounted(async () => {
-  await refresh();
-});
 
 const deleteSession = async (sessionId) => {
   SessionApi.deleteSession(1, sessionId)
@@ -92,7 +133,9 @@ const deleteSession = async (sessionId) => {
 }
 
 const refresh = async () => {
-  sessions.value = (await SessionApi.getSessions(1, props.period)).data.items;
+  let data = (await SessionApi.getSessions(1, props.period)).data;
+  sessions.value = data.items;
+  pageData.value = data.meta;
 }
 
 defineExpose({refresh})
