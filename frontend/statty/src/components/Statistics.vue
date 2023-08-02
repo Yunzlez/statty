@@ -24,16 +24,25 @@
 
 <script setup>
 import { ArrowDownIcon, ArrowUpIcon } from '@heroicons/vue/20/solid'
-import {markRaw, onMounted, ref} from 'vue';
+import {markRaw, onMounted, ref, watch} from 'vue';
 import {StatsApi} from "../api/statsApi.js";
 
 let stats = ref(0);
+const props = defineProps({
+  period: String
+});
+
 onMounted(() => {
   refresh();
 });
 
+watch(() => props.period, async () => {
+  console.log("refreshing stats");
+  await refresh();
+})
+
 const refresh = async () => {
-  StatsApi.getStats(1).then(res => {
+  StatsApi.getStats(1, props.period || '').then(res => {
     let apiStats = [];
     apiStats.push({ id: 1, name: 'Average consumption since last charge', stat: Number(res.data.avg_consumption_last_charge.toFixed(2)) , previousStat: '', change: '', changeType: 'increase', unit: 'kWh' });
     apiStats.push({ id: 2, name: 'Average consumption overall', stat: Number(res.data.avg_consumption.toFixed(2)) , previousStat: '', change: '', changeType: 'increase', unit: 'kWh' });

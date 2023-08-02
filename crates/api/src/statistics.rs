@@ -1,10 +1,15 @@
 use std::collections::HashMap;
-use std::io::Result;
+use std::io::{Error, ErrorKind, Result};
 
 use actix_web::http::StatusCode;
 use actix_web::HttpResponse;
 use actix_web::web::{Data, Path, Query};
+use diesel::data_types::PgInterval;
+use diesel::dsl::now;
+use diesel::internal::derives::as_expression::Bound;
+use diesel::internal::derives::numeric_ops::Sub;
 use diesel::prelude::*;
+use diesel::sql_types::Interval;
 
 use statty_common::context::Context;
 use statty_common::http_utils::http_error;
@@ -18,8 +23,6 @@ use statty_domain::stats::GlobalStatistics;
 use statty_domain::vehicle::Vehicle;
 
 pub async fn get_stats(ctx: Data<Context>, path: Path<i32>, query: Query<HashMap<String, String>>) -> Result<HttpResponse> {
-    let conn = &mut ctx.clone().get_pool().get().unwrap();
-
     let path_id = &path.into_inner();
 
     let all = &"all".to_string();
@@ -29,6 +32,63 @@ pub async fn get_stats(ctx: Data<Context>, path: Path<i32>, query: Query<HashMap
         Ok(it) => it,
         Err(e) => return http_error(StatusCode::BAD_REQUEST, &*e.to_string())
     };
+
+    let query_result = match query_data(ctx, path_id, period) {
+        Ok(it) => it,
+        Err(e) => return http_error(StatusCode::NOT_FOUND, &*e.to_string())
+    };
+
+    //just to make the calculations below a bit more readable
+    let cap = query_result.capacity;
+    let clim = query_result.charge_limit;
+    let charged_energy = query_result.charged_energy;
+    let odo = query_result.odometer;
+    let prev_soc = query_result.prev_soc;
+    let prev_odo = query_result.prev_odo;
+    let period_start_odo = query_result.period_start_odo;
+    let total_energy = query_result.total_energy;
+
+    println!("cap={}; clim={}; charged_energy={}; total_energy={}; odo={}; prev_soc={}; prev_odo={}; period_start_odo={}", cap, clim, charged_energy, total_energy, odo, prev_soc, prev_odo, period_start_odo);
+
+    let avg_consumption = match period_start_odo {
+        //assume the car was charged to clim at the start of the first session
+        0 => ((total_energy + (cap * clim)) / (odo as f64)) * 100.0,
+        //if we're not taking all sessions into account, we need to start the odometer reading at the session before the period
+        _ => ((total_energy) / ((odo - period_start_odo) as f64)) * 100.0,
+    };
+
+    let stats = GlobalStatistics {
+        avg_consumption,
+        //this calculation assumes the battery SoC is reported linearly by the vehicle
+        avg_consumption_last_charge: ((charged_energy - (cap * (clim - prev_soc/100.0)))/(odo as f64 - prev_odo)) * 100.0,
+        num_sessions: query_result.session_count,
+        total_distance: odo
+    };
+
+    return Ok(HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&stats).unwrap()));
+}
+
+struct QueryResult {
+    //battery capacity in kWh
+    capacity: f64,
+    //charge limit between 0 and 1
+    charge_limit: f64,
+    //the energy charged in the last session in kWh
+    charged_energy: f64,
+    //the odometer reading at the end of the last session
+    odometer: i32,
+    //the SoC at the end of the last session
+    prev_soc: f64,
+    //the odometer reading at the end of the second last session
+    prev_odo: f64,
+    //the odometer reading at the start of the period
+    period_start_odo: i32,
+    total_energy: f64,
+    session_count: i64
+}
+
+fn query_data(ctx: Data<Context>, path_id: &i32, period: Sub<now, Bound<Interval, PgInterval>>) -> Result<QueryResult, > {
+    let conn = &mut ctx.clone().get_pool().get().unwrap();
 
     let vehicle = vehicles
         .filter(id.eq(path_id))
@@ -45,6 +105,12 @@ pub async fn get_stats(ctx: Data<Context>, path: Path<i32>, query: Query<HashMap
         .order(date.desc())
         .load(conn)
         .expect("Failed to retrieve sessions");
+
+    //throw an error if less than 2 sessions are available
+    if results.len() < 2 {
+        //todo this should be mappable to HTTP status code
+        return Err(Error::new(ErrorKind::NotFound, "Not enough data available to calculate statistics"));
+    }
 
     //get last session before period
     //only used when period is not "all"
@@ -75,42 +141,15 @@ pub async fn get_stats(ctx: Data<Context>, path: Path<i32>, query: Query<HashMap
         .expect("Failed to retrieve sessions")
         .unwrap_or(0.0);
 
-    //throw an error if less than 2 sessions are available
-    if results.len() < 2 {
-        return http_error(StatusCode::NOT_FOUND, "Not enough data available to calculate statistics");
-    }
-
-    //battery capacity in kWh
-    let cap = vehicle.get(0).unwrap().battery_capacity as f64;
-    //charge limit between 0 and 1
-    let clim = vehicle.get(0).unwrap().charge_limit;
-    //the energy charged in the last session in kWh
-    let charged_energy = results.get(0).unwrap().energy;
-    //the odometer reading at the end of the last session
-    let odo = results.get(0).unwrap().odometer;
-    //the SoC at the end of the last session
-    let prev_soc = results.get(1).unwrap().end_soc as f64;
-    //the odometer reading at the end of the second last session
-    let prev_odo = results.get(1).unwrap().odometer as f64;
-    //the odometer reading at the start of the period
-    let period_start_odo = prev_session.map_or(0, |s| s.odometer);
-
-    println!("cap={}; clim={}; charged_energy={}; total_energy={}; odo={}; prev_soc={}; prev_odo={}; period_start_odo={}", cap, clim, charged_energy, total_energy, odo, prev_soc, prev_odo, period_start_odo);
-    
-    let avg_consumption = match period_start_odo {
-        //assume the car was charged to clim at the start of the first session
-        0 => ((total_energy + (cap * clim)) / (odo as f64)) * 100.0,
-        //if we're not taking all sessions into account, we need to start the odometer reading at the session before the period
-        _ => ((total_energy) / ((odo - period_start_odo) as f64)) * 100.0,
-    };
-
-    let stats = GlobalStatistics {
-        avg_consumption,
-        //this calculation assumes the battery SoC is reported linearly by the vehicle
-        avg_consumption_last_charge: ((charged_energy - (cap * (clim - prev_soc/100.0)))/(odo as f64 - prev_odo)) * 100.0,
-        num_sessions: session_count,
-        total_distance: odo
-    };
-
-    return Ok(HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&stats).unwrap()));
+    return Ok(QueryResult {
+        capacity: vehicle.get(0).unwrap().battery_capacity as f64,
+        charge_limit: vehicle.get(0).unwrap().charge_limit,
+        charged_energy: results.get(0).unwrap().energy,
+        odometer: results.get(0).unwrap().odometer,
+        prev_soc: results.get(1).unwrap().end_soc as f64,
+        prev_odo: results.get(1).unwrap().odometer as f64,
+        period_start_odo: prev_session.map_or(0, |s| s.odometer),
+        total_energy,
+        session_count
+    })
 }

@@ -4,6 +4,10 @@ export const StatsApi = {
     getStats
 }
 
-function getStats(vehicleId) {
-    return Client.get(`/ev_stats/vehicles/${vehicleId}/stats`)
+function getStats(vehicleId, period) {
+    let query = "";
+    if (period) {
+        query = `?period=${period}`
+    }
+    return Client.get(`/ev_stats/vehicles/${vehicleId}/stats${query}`)
 }
