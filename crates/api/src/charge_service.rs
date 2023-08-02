@@ -8,6 +8,7 @@ use diesel::prelude::*;
 
 use statty_common::context::Context;
 use statty_common::http_utils::http_error;
+use statty_common::period::parse_period;
 use statty_db::util::get_page_params;
 use statty_domain::charge_session::{ChargeSession, ChargeSessionDto, from_dto, to_dto};
 use statty_domain::meta::{PagedList, PageMeta};
@@ -18,11 +19,20 @@ pub async fn list_sessions(ctx: Data<Context>, path: Path<i32>, query: Query<Has
     //todo check vehicle
     let conn = &mut ctx.clone().get_pool().get().unwrap();
 
-    let page_params = get_page_params(query);
+    let page_params = get_page_params(&query);
     let path_param = &path.into_inner();
+
+    let all = &"all".to_string();
+    let period_str = query.get("period").unwrap_or(all);
+
+    let period = match parse_period(period_str.parse().unwrap()) {
+        Ok(it) => it,
+        Err(e) => return http_error(StatusCode::BAD_REQUEST, &*e.to_string())
+    };
 
     let total: i64 = charge_sessions
         .filter(vehicle_id.eq(path_param))
+        .filter(date.gt(period))
         .count()
         .get_result(conn)
         .expect("Failed to retrieve sessions");
@@ -31,6 +41,7 @@ pub async fn list_sessions(ctx: Data<Context>, path: Path<i32>, query: Query<Has
         .limit(page_params.1)
         .offset(page_params.0 * page_params.1)
         .filter(vehicle_id.eq(path_param))
+        .filter(date.gt(period))
         .order(date.desc())
         .select(ChargeSession::as_select())
         .load(conn)

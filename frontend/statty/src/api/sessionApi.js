@@ -6,8 +6,12 @@ export const SessionApi = {
     deleteSession
 }
 
-function getSessions(vehicleId) {
-    return Client.get(`/ev_stats/vehicles/${vehicleId}/charging_sessions`);
+function getSessions(vehicleId, period) {
+    let query = "";
+    if (period) {
+        query = `?period=${period}`
+    }
+    return Client.get(`/ev_stats/vehicles/${vehicleId}/charging_sessions${query}`);
 }
 
 function addSession(vehicleId, session) {

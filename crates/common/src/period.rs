@@ -19,7 +19,6 @@ lazy_static! {
 
 //parse a period string, like 7d, 1m, 1y, all into a diesel DSL interval
 pub fn parse_period(period: String) -> Result<Sub<now, Bound<Interval, PgInterval>>> {
-    println!("{}", period);
     if !validate_period_str(&period) {
         return Err(Error::new(ErrorKind::InvalidInput, "Invalid format"));
     }
@@ -48,8 +47,6 @@ fn validate_period_str(period: &String) -> bool {
 fn do_parse(period: String) -> Result<(i32, String)> {
     let (input, num) = parse_digits(period.as_str()).unwrap();
     let (_, unit) = parse_unit(input).unwrap();
-
-    println!("{} - {}", num, unit);
 
     return Ok((num, unit));
 }

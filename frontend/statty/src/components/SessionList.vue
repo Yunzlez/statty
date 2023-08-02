@@ -55,11 +55,19 @@
 </template>
 
 <script setup>
-import {onMounted, ref} from "vue";
+import {onMounted, ref, watch} from "vue";
 import {SessionApi} from "../api/sessionApi.js";
 
-//todo add delete button
 //todo update on insert
+
+const props = defineProps({
+  period: String
+});
+
+watch(() => props.period, async () => {
+  console.log("refreshing stats");
+  await refresh();
+})
 
 let vehicle = ref();
 vehicle.value = {
@@ -84,7 +92,7 @@ const deleteSession = async (sessionId) => {
 }
 
 const refresh = async () => {
-  sessions.value = (await SessionApi.getSessions(1)).data.items;
+  sessions.value = (await SessionApi.getSessions(1, props.period)).data.items;
 }
 
 defineExpose({refresh})
