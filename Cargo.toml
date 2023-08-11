@@ -25,6 +25,9 @@ members = [
     "crates/domain",
     "crates/common"
 ]
+exclude = [
+    "ui/statty-ui"
+]
 
 [workspace.dependencies]
 statty_routes = { version = "=0.0.1", path = "./crates/routes"}
