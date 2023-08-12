@@ -5,7 +5,7 @@ use actix_web::http::StatusCode;
 use actix_web::HttpResponse;
 use actix_web::web::{Data, Path, Query};
 use diesel::data_types::PgInterval;
-use diesel::dsl::now;
+use diesel::dsl::{now, not};
 use diesel::internal::derives::as_expression::Bound;
 use diesel::internal::derives::numeric_ops::Sub;
 use diesel::prelude::*;
@@ -15,7 +15,7 @@ use statty_common::context::Context;
 use statty_common::http_utils::http_error;
 use statty_common::period::parse_period;
 use statty_domain::charge_session::ChargeSession;
-use statty_domain::schema::charge_sessions::{date, energy, vehicle_id};
+use statty_domain::schema::charge_sessions::{date, energy, vehicle_id, id as session_id};
 use statty_domain::schema::charge_sessions::dsl::charge_sessions;
 use statty_domain::schema::vehicles::dsl::vehicles;
 use statty_domain::schema::vehicles::id;
@@ -27,13 +27,19 @@ pub async fn get_stats(ctx: Data<Context>, path: Path<i32>, query: Query<HashMap
 
     let all = &"all".to_string();
     let period_str = query.get("period").unwrap_or(all);
+    let prev_stats_str = query.get("prev").unwrap_or(all);
+
+    let prev_stats = match prev_stats_str {
+        _ if prev_stats_str == "true" => true,
+        _ => false,
+    };
 
     let period = match parse_period(period_str.parse().unwrap()) {
         Ok(it) => it,
         Err(e) => return http_error(StatusCode::BAD_REQUEST, &*e.to_string())
     };
 
-    let query_result = match query_data(ctx, path_id, period) {
+    let query_result = match query_data(ctx, path_id, period, prev_stats) {
         Ok(it) => it,
         Err(e) => return http_error(StatusCode::NOT_FOUND, &*e.to_string())
     };
@@ -58,11 +64,14 @@ pub async fn get_stats(ctx: Data<Context>, path: Path<i32>, query: Query<HashMap
     };
 
     let stats = GlobalStatistics {
-        avg_consumption,
+        avg_consumption: ((total_energy - charged_energy) / ((odo - period_start_odo) as f64)) * 100.0,
         //this calculation assumes the battery SoC is reported linearly by the vehicle
-        avg_consumption_last_charge: ((charged_energy - (cap * (clim - prev_soc/100.0)))/(odo as f64 - prev_odo)) * 100.0,
+        avg_consumption_last_charge: ((charged_energy - (cap * (clim - prev_soc / 100.0))) / (odo - prev_odo) as f64) * 100.0,
         num_sessions: query_result.session_count,
-        total_distance: odo
+        total_distance: odo,
+        distance_last_charge: odo - prev_odo,
+        avg_distance_80_percent: cap / avg_consumption * 100.0 * 0.8,
+        total_energy,
     };
 
     return Ok(HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&stats).unwrap()));
@@ -80,14 +89,14 @@ struct QueryResult {
     //the SoC at the end of the last session
     prev_soc: f64,
     //the odometer reading at the end of the second last session
-    prev_odo: f64,
+    prev_odo: i32,
     //the odometer reading at the start of the period
     period_start_odo: i32,
     total_energy: f64,
-    session_count: i64
+    session_count: i64,
 }
 
-fn query_data(ctx: Data<Context>, path_id: &i32, period: Sub<now, Bound<Interval, PgInterval>>) -> Result<QueryResult, > {
+fn query_data(ctx: Data<Context>, path_id: &i32, period: Sub<now, Bound<Interval, PgInterval>>, prev: bool) -> Result<QueryResult, > {
     let conn = &mut ctx.clone().get_pool().get().unwrap();
 
     let vehicle = vehicles
@@ -100,7 +109,7 @@ fn query_data(ctx: Data<Context>, path_id: &i32, period: Sub<now, Bound<Interval
     let results = charge_sessions
         .filter(vehicle_id.eq(path_id))
         .filter(date.gt(period))
-        .limit(2)
+        .offset(if prev { 1 } else { 0 })
         .select(ChargeSession::as_select())
         .order(date.desc())
         .load(conn)
@@ -114,7 +123,7 @@ fn query_data(ctx: Data<Context>, path_id: &i32, period: Sub<now, Bound<Interval
 
     //get last session before period
     //only used when period is not "all"
-    //tbd if it's better to skip the query for performance reasons when period is "all"
+    //tbd if it's worth to skip the query for performance reasons when period is "all"
     let prev_session = charge_sessions
         .filter(vehicle_id.eq(path_id))
         .filter(date.lt(period))
@@ -125,21 +134,48 @@ fn query_data(ctx: Data<Context>, path_id: &i32, period: Sub<now, Bound<Interval
         .expect("Failed to retrieve sessions");
 
     //get the total number of sessions
-    let session_count = charge_sessions
+    let mut session_count = charge_sessions
         .filter(vehicle_id.eq(path_id))
         .filter(date.gt(period))
         .count()
         .get_result(conn)
         .expect("Failed to retrieve sessions");
 
+    if prev {
+        session_count -= 1;
+    }
+
     //execute query: select COALESCE(SUM(energy), 0) from charge_sessions where vehicle_id=?;
-    let total_energy = charge_sessions
-        .filter(vehicle_id.eq(path_id))
-        .filter(date.gt(period))
-        .select(diesel::dsl::sum(energy))
-        .first::<Option<f64>>(conn)
-        .expect("Failed to retrieve sessions")
-        .unwrap_or(0.0);
+    let total_energy = match prev {
+        true => {
+            let last_charge_session_id = charge_sessions
+                .filter(vehicle_id.eq(path_id))
+                .order(date.desc())
+                .select(session_id)
+                .first::<i32>(conn)
+                .expect("Failed to retrieve sessions");
+
+            charge_sessions
+            .filter(vehicle_id.eq(path_id))
+            .filter(date.gt(period))
+            .filter(
+                not(
+                    session_id.eq(last_charge_session_id)
+                )
+            )
+            .select(diesel::dsl::sum(energy))
+            .first::<Option<f64>>(conn)
+            .expect("Failed to retrieve sessions")
+            .unwrap_or(0.0)
+        },
+        false => charge_sessions
+            .filter(vehicle_id.eq(path_id))
+            .filter(date.gt(period))
+            .select(diesel::dsl::sum(energy))
+            .first::<Option<f64>>(conn)
+            .expect("Failed to retrieve sessions")
+            .unwrap_or(0.0)
+    };
 
     return Ok(QueryResult {
         capacity: vehicle.get(0).unwrap().battery_capacity as f64,
@@ -147,9 +183,9 @@ fn query_data(ctx: Data<Context>, path_id: &i32, period: Sub<now, Bound<Interval
         charged_energy: results.get(0).unwrap().energy,
         odometer: results.get(0).unwrap().odometer,
         prev_soc: results.get(1).unwrap().end_soc as f64,
-        prev_odo: results.get(1).unwrap().odometer as f64,
-        period_start_odo: prev_session.map_or(0, |s| s.odometer),
+        prev_odo: results.get(1).unwrap().odometer,
+        period_start_odo: prev_session.map_or(results.get(results.len() - 1).unwrap().odometer, |s| s.odometer),
         total_energy,
-        session_count
-    })
+        session_count,
+    });
 }

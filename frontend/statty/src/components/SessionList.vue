@@ -20,6 +20,8 @@
                 <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Energy</th>
                 <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Odometer</th>
                 <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">End SoC</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Distance</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Avg Consumption</th>
                 <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Actions</th>
 <!--                <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">-->
 <!--                  <span class="sr-only">Edit</span>-->
@@ -27,11 +29,14 @@
               </tr>
               </thead>
               <tbody class="divide-y divide-gray-200 bg-white">
-              <tr v-for="session in sessions" :key="session.id">
+              <tr v-for="session, i in sessions" :key="session.id">
                 <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">{{ session.date }}</td>
                 <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ session.energy }} kWh</td>
                 <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ session.odometer }} km</td>
                 <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ session.end_soc }} %</td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500"><span v-if="i !== (sessions.length -1)">{{ session.odometer - sessions[i+1].odometer }} km</span><span v-else> N/A </span></td>
+<!--                TODO add clim calculation-->
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500"><span v-if="i !== (sessions.length -1)">{{ ((session.energy / (session.odometer - sessions[i+1].odometer)) * 100).toFixed(2) }} kWh/100 km</span><span v-else> N/A </span></td>
                 <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                   <button @click="deleteSession(session.id)" type="button" class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-red-600 hover:bg-red-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-500">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
