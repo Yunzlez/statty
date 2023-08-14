@@ -3,6 +3,7 @@ use std::io::Result;
 use actix_web::HttpResponse;
 use actix_web::web::{Data, Path};
 use diesel::prelude::*;
+use log::debug;
 
 use statty_common::context::Context;
 use statty_domain::schema::vehicles::dsl::vehicles;
@@ -17,7 +18,7 @@ pub async fn list_vehicles(data: Data<Context>) -> Result<HttpResponse> {
         .load(connection)
         .expect("Failed to retrieve vehicles");
 
-    println!("Retrieved {} vehicles", results.len());
+    debug!("Retrieved {} vehicles", results.len());
 
     return Ok(HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&results).unwrap()))
 }

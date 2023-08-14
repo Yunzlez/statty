@@ -13,4 +13,5 @@ doctest = false
 
 [dependencies]
 diesel = { workspace = true }
+diesel_migrations = { workspace = true }
 actix-web = { workspace = true }

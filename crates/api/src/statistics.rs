@@ -10,6 +10,7 @@ use diesel::internal::derives::as_expression::Bound;
 use diesel::internal::derives::numeric_ops::Sub;
 use diesel::prelude::*;
 use diesel::sql_types::Interval;
+use log::debug;
 
 use statty_common::context::Context;
 use statty_common::http_utils::http_error;
@@ -54,7 +55,7 @@ pub async fn get_stats(ctx: Data<Context>, path: Path<i32>, query: Query<HashMap
     let period_start_odo = query_result.period_start_odo;
     let total_energy = query_result.total_energy;
 
-    println!("cap={}; clim={}; charged_energy={}; total_energy={}; odo={}; prev_soc={}; prev_odo={}; period_start_odo={}", cap, clim, charged_energy, total_energy, odo, prev_soc, prev_odo, period_start_odo);
+    debug!("cap={}; clim={}; charged_energy={}; total_energy={}; odo={}; prev_soc={}; prev_odo={}; period_start_odo={}", cap, clim, charged_energy, total_energy, odo, prev_soc, prev_odo, period_start_odo);
 
     let avg_consumption = match period_start_odo {
         //assume the car was charged to clim at the start of the first session

@@ -18,14 +18,18 @@ use actix_web::{App, HttpServer};
 use actix_web::http::header;
 use actix_web::web::Data;
 use dotenvy::dotenv;
+use log::info;
 use statty_common::context::Context;
-use statty_db::db_conn::get_db_pool;
+use statty_db::db_conn::{get_db_pool, run_migrations};
 use statty_routes::routes::config;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
     env_logger::init();
+    info!("Starting statty");
+    run_migrations().expect("Unable to run migrations");
+    info!("Finished DB migrations successfully");
 
     HttpServer::new(|| {
         let cors = Cors::default()
@@ -39,7 +43,7 @@ async fn main() -> std::io::Result<()> {
             .configure(|cfg| config(cfg))
             .app_data(Data::new(Context::new_context(get_db_pool())))
     })
-        .bind(("127.0.0.1", 8080))?
+        .bind(("0.0.0.0", 8080))?
         .run()
         .await
 }

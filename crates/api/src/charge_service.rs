@@ -5,6 +5,7 @@ use actix_web::http::StatusCode;
 use actix_web::HttpResponse;
 use actix_web::web::{Data, Json, Path, Query};
 use diesel::prelude::*;
+use log::debug;
 
 use statty_common::context::Context;
 use statty_common::http_utils::http_error;
@@ -50,7 +51,7 @@ pub async fn list_sessions(ctx: Data<Context>, path: Path<i32>, query: Query<Has
         .map(|it| to_dto(it))
         .collect();
 
-    println!("Retrieved {} sessions", results.len());
+    debug!("Retrieved {} sessions", results.len());
 
     let list = PagedList {
         items: &results,
@@ -77,7 +78,7 @@ pub async fn add_session(ctx: Data<Context>, data: Json<ChargeSessionDto>) -> Re
         new_session.date = Some(chrono::offset::Local::now().naive_local().date());
     }
 
-    println!("Insert {}", serde_json::to_string(&new_session).unwrap());
+    debug!("Insert {}", serde_json::to_string(&new_session).unwrap());
 
     let res = diesel::insert_into(charge_sessions)
         .values(from_dto(new_session))
@@ -97,7 +98,7 @@ pub async fn delete_session(ctx: Data<Context>, path: Path<(i32, i32)>) -> Resul
 
     let path_params = &path.into_inner();
 
-    println!("deleting session {} for vehicle {}", path_params.1, path_params.0);
+    debug!("deleting session {} for vehicle {}", path_params.1, path_params.0);
 
     let deleted = diesel::delete(charge_sessions)
         .filter(vehicle_id.eq(path_params.0))
