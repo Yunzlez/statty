@@ -13,9 +13,13 @@ doctest = false
 
 [dependencies]
 diesel = { workspace = true }
+oxide-auth = { workspace = true }
+oxide-auth-actix= { workspace = true }
+actix = { workspace = true }
 actix-web = { workspace = true }
 serde = { workspace = true }
 chrono = { workspace = true }
 regex = { workspace = true }
 lazy_static = { workspace = true }
 nom = { workspace = true }
+log = { workspace = true }
