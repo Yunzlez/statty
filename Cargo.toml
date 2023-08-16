@@ -34,11 +34,8 @@ statty_db = { version = "=0.0.1", path = "./crates/db"}
 statty_api = { version = "=0.0.1", path = "./crates/api"}
 statty_auth = { version = "=0.0.1", path = "./crates/auth"}
 statty_common = { version = "=0.0.1", path = "./crates/common"}
-<<<<<<< HEAD
 actix = "0.12"
-=======
 statty_config = { version = "=0.0.1", path = "./crates/config"}
->>>>>>> b737fd9 (add config)
 actix-web = { version = "4", features = ["rustls"] }
 actix-cors = "0.6.4"
 oxide-auth = "0.5.3"
