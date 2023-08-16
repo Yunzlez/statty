@@ -12,7 +12,7 @@
 
           <div v-if="item.change" :class="[item.changeType === 'increase' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800', 'inline-flex items-baseline rounded-full px-2.5 py-0.5 text-sm font-medium md:mt-2 lg:mt-0']">
             <ArrowUpIcon v-if="item.changeType === 'increase' && !item.inversePositive" class="-ml-1 mr-0.5 h-5 w-5 flex-shrink-0 self-center text-green-500" aria-hidden="true" />
-            <ArrowDownIcon v-else :class="item.inversePositive ? 'text-green-500' : 'text-red-500'" class="-ml-1 mr-0.5 h-5 w-5 flex-shrink-0 self-center" aria-hidden="true" />
+            <ArrowDownIcon v-else :class="item.inversePositive ? 'text-red-500' : 'text-green-500' " class="-ml-1 mr-0.5 h-5 w-5 flex-shrink-0 self-center" aria-hidden="true" />
             <span class="sr-only"> {{ item.changeType === 'increase' ? 'Increased' : 'Decreased' }} by </span>
             {{ item.change }} {{item.unit}}
           </div>
@@ -56,7 +56,7 @@ const refresh = async () => {
     let old_total_energy = res.data.total_energy.toFixed(2);
     let total_energy = stats.value[0].stat;
     stats.value[0].previousStat = old_total_energy;
-    stats.value[0].change = total_energy - old_total_energy;
+    stats.value[0].change = (total_energy - old_total_energy)?.toFixed(2);
     stats.value[0].changeType = total_energy > old_total_energy ? 'increase' : 'decrease';
 
     let old_avg_consumption = Number(res.data.avg_consumption.toFixed(2));
