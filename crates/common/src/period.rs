@@ -1,5 +1,5 @@
 use std::io::{Error, ErrorKind, Result};
-use chrono::{Datelike};
+use chrono::Datelike;
 
 use diesel::data_types::PgInterval;
 use diesel::dsl::{IntervalDsl, now};
@@ -7,9 +7,9 @@ use diesel::internal::derives::as_expression::Bound;
 use diesel::internal::derives::numeric_ops::Sub;
 use diesel::sql_types::Interval;
 use lazy_static::lazy_static;
-use nom::bytes::complete::{take_while_m_n};
+use nom::bytes::complete::take_while_m_n;
 use nom::combinator::map_res;
-use nom::{IResult};
+use nom::IResult;
 use nom::character::complete::one_of;
 use regex::Regex;
 

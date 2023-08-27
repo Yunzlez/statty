@@ -22,16 +22,19 @@ use log::info;
 use statty_common::context::Context;
 use statty_db::db_conn::{get_db_pool, run_migrations};
 use statty_routes::routes::config;
+use statty_config::config::Config;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
+    let app_config = Config::from_env().expect("Unable to load config");
     env_logger::init();
+
     info!("Starting statty");
     run_migrations().expect("Unable to run migrations");
     info!("Finished DB migrations successfully");
 
-    HttpServer::new(|| {
+    HttpServer::new(move || {
         let cors = Cors::default()
             .allow_any_origin()
             .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
@@ -41,9 +44,9 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(cors)
             .configure(|cfg| config(cfg))
-            .app_data(Data::new(Context::new_context(get_db_pool())))
+            .app_data(Data::new(Context::new_context(get_db_pool(app_config.db_url.clone()))))
     })
-        .bind(("0.0.0.0", 8080))?
+        .bind(("0.0.0.0", app_config.port))?
         .run()
         .await
 }

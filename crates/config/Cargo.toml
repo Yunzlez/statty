@@ -1,0 +1,15 @@
+[package]
+name = "statty_config"
+version.workspace = true
+edition.workspace = true
+description.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lib]
+name = "statty_config"
+path = "src/lib.rs"
+doctest = false
+
+[dependencies]
+dotenvy = { workspace = true }
