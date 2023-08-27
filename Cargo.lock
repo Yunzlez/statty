@@ -1729,6 +1729,7 @@ dependencies = [
  "env_logger",
  "log",
  "statty_common",
+ "statty_config",
  "statty_db",
  "statty_routes",
 ]
@@ -1763,6 +1764,13 @@ dependencies = [
  "oxide-auth-actix",
  "regex",
  "serde",
+]
+
+[[package]]
+name = "statty_config"
+version = "0.0.1"
+dependencies = [
+ "dotenvy",
 ]
 
 [[package]]

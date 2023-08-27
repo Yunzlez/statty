@@ -13,9 +13,9 @@ pub fn get_db_conn() -> PgConnection {
         .unwrap_or_else(|_| panic!("Failed to connect to database"))
 }
 
-pub fn get_db_pool() -> Pool<ConnectionManager<PgConnection>> {
+pub fn get_db_pool(database_url: String) -> Pool<ConnectionManager<PgConnection>> {
 
-    let mgr = ConnectionManager::<PgConnection>::new(env::var("DATABASE_URL").expect("DATABASE_URL must be set"));
+    let mgr = ConnectionManager::<PgConnection>::new(database_url);
 
     Pool::builder()
         .test_on_check_out(true)
