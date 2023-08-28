@@ -17,16 +17,24 @@ impl Config {
     }
 }
 
-fn parse_var<OUT, ERR>(name: &str, parser: fn(String)-> Result<OUT, ERR>, default: Option<OUT>) -> Result<OUT, ConfigError> {
-    return env::var(name)
+fn parse_var<OUT, ERR>(name: &str, parser: fn(String) -> Result<OUT, ERR>, default: Option<OUT>) -> Result<OUT, ConfigError> {
+    let res = env::var(name)
         .map_err(|_| ConfigError {
             name: String::from(name),
             message: String::from("Value is required"),
-            reason: ConfigErrorType::NotPresent,
+            reason: ConfigErrorType::NotPresent, 
         })
         .and_then(|it| parser(it).map_err(|_| ConfigError {
             name: String::from(name),
             message: String::from("value is invalid"),
             reason: ConfigErrorType::Invalid,
-        }))
+        }));
+
+    return match res {
+        Ok(it) => Ok(it),
+        Err(err) => match default {
+            Some(it) => Ok(it),
+            None => Err(err),
+        }
+    }
 }
