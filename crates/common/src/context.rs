@@ -1,7 +1,7 @@
 use actix::{Actor, Addr};
 use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, Pool};
-use crate::auth::AuthState;
+use crate::auth::auth::AuthState;
 
 #[derive(Clone)]
 pub struct Context {

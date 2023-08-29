@@ -4,12 +4,13 @@ use actix_web::{HttpRequest, HttpResponse, web};
 use statty_api::charge_service::{add_session, delete_session, list_sessions};
 use statty_api::statistics::get_stats;
 use statty_api::vehicle_service::{list_vehicles, vehicle_details};
-use statty_common::auth::auth::get_auth_routes;
+use statty_common::auth::auth::auth_routes;
 
 pub fn config(cfg: &mut web::ServiceConfig) {
-    cfg.service(
+    cfg
+    .configure(auth_routes)
+    .service(
         web::scope("/api/v1")
-            .service(get_auth_routes())
             .service(
                 web::scope("/ev_stats/vehicles")
                     .route("", web::get().to(list_vehicles))
