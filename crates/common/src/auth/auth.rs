@@ -32,7 +32,6 @@ struct Credentials {
 enum Extras {
     Authorize,
     AuthorizePost(Credentials),
-    AuthorizationCodePkce,
     Nothing
 }
 
@@ -147,9 +146,6 @@ impl<Op> Handler<OAuthMessage<Op, Extras>> for AuthState where Op: OAuthOperatio
                 });
 
                 op.run(&mut self.with_solicitor(solicitor))
-            }
-            Extras::AuthorizationCodePkce => {
-                op.run(&mut self.endpoint)
             }
             _ => { op.run(&mut self.endpoint)}
         }
