@@ -1,14 +1,23 @@
+use std::borrow::Cow;
+use std::collections::HashSet;
+
 use actix::{Actor, Context, Handler};
 use actix_web::web::Json;
 use actix_web::web;
+use argon2::Argon2;
+use diesel::PgConnection;
+use diesel::r2d2::{PooledConnection, ConnectionManager, Pool};
 use log::debug;
-use oxide_auth::endpoint::{Endpoint, Solicitation, OwnerConsent, OwnerSolicitor};
+use oxide_auth::endpoint::{Endpoint, Solicitation, OwnerConsent, OwnerSolicitor, Registrar, PreGrant};
 use oxide_auth::frontends::simple::endpoint::{Generic, Vacant, FnSolicitor, ErrorInto};
 use oxide_auth::primitives::issuer::TokenMap;
 use oxide_auth::primitives::prelude::{AuthMap, Client, ClientMap, RandomGenerator, Scope};
-use oxide_auth::primitives::registrar::RegisteredUrl;
+use oxide_auth::primitives::registrar::{RegisteredUrl, BoundClient};
 use oxide_auth_actix::{Authorize, OAuthMessage, OAuthOperation, OAuthRequest, OAuthResponse, Refresh, Token, WebError};
+use password_hash::{PasswordHash, PasswordVerifier, SaltString, Salt};
 use serde::Deserialize;
+use statty_db::db_conn::DatabaseContext;
+use statty_domain::schema::users;
 
 use crate::context::Context as AppContext;
 
@@ -31,18 +40,60 @@ struct Credentials {
 
 enum Extras {
     Authorize,
-    AuthorizePost(Credentials),
+    AuthorizePost(Credentials, PooledConnection<ConnectionManager<PgConnection>>),
     Nothing
 }
 
+pub struct DbRegistrar {
+    pub db: DatabaseContext
+}
+
+impl Registrar for DbRegistrar {
+    fn bound_redirect<'a>(&self, bound: oxide_auth::primitives::registrar::ClientUrl<'a>) -> Result<oxide_auth::primitives::registrar::BoundClient<'a>, oxide_auth::primitives::registrar::RegistrarError> {
+        //todo get the redirect url
+        //using RegisteredUrl::IgnorePortOnLocalhost for http://localhost urls
+        match bound.redirect_uri {
+            Some(url) => {
+                Ok(BoundClient {
+                    client_id: bound.client_id,
+                    redirect_uri: Cow::Owned(RegisteredUrl::Exact(url.into_owned()))
+                })
+            }
+            None => {
+                Err(oxide_auth::primitives::registrar::RegistrarError::Unspecified)
+            }
+        }
+    }
+
+    fn negotiate(&self, client: oxide_auth::primitives::registrar::BoundClient, scope: Option<Scope>) -> Result<oxide_auth::endpoint::PreGrant, oxide_auth::primitives::registrar::RegistrarError> {
+        //todo check the actual scopes requested at some point 
+        Ok(PreGrant{
+            client_id: client.client_id.into_owned(),
+            redirect_uri: client.redirect_uri.into_owned(),
+            scope: "read write".parse::<Scope>().unwrap()
+        })
+    }
+
+    fn check(&self, client_id: &str, passphrase: Option<&[u8]>) -> Result<(), oxide_auth::primitives::registrar::RegistrarError> {
+        //todo get client from db and check the hashed secret
+
+        let hash = PasswordHash::new(&"lol").expect("nah");
+        let algos: &[&dyn PasswordVerifier] = &[&Argon2::default()];
+        hash.verify_password(algos, passphrase.unwrap()).expect("nah");
+
+        //PasswordHash::generate(Argon2::default(), "patat", Salt::from_b64(SaltString::generate()));
+        todo!()
+    }
+}
+
 impl AuthState {
-    pub fn preconfigured() -> Self {
+    pub fn preconfigured(auth_registrar: impl Registrar) -> Self {
         AuthState {
             endpoint: Generic {
                 registrar: vec![Client::public(
                     "statty-frontend",
                     RegisteredUrl::Exact("http://localhost:8080/auth".parse().unwrap()),
-                    "".parse().unwrap()
+                    "secrit".parse().unwrap()
                 )].into_iter().collect(),
                 authorizer: AuthMap::new(RandomGenerator::new(16)),
                 issuer: TokenMap::new(RandomGenerator::new(16)),
@@ -86,10 +137,6 @@ pub fn auth_routes(cfg: &mut web::ServiceConfig) {
     );
 }
 
-async fn todo() -> Result<OAuthResponse, WebError> {
-    Ok(OAuthResponse::ok())
-}
-
 async fn refresh(
     (req, ctx): (OAuthRequest, web::Data<AppContext>)
 ) -> Result<OAuthResponse, WebError> {
@@ -112,7 +159,7 @@ async fn post_authorize(
     (data, req, ctx): (Json<Credentials>, OAuthRequest, web::Data<AppContext>)
 ) -> Result<OAuthResponse, WebError> {
     debug!("data: {:?}", data.clone());
-    ctx.get_auth_state().send(Authorize(req).wrap(Extras::AuthorizePost(data.into_inner()))).await?
+    ctx.get_auth_state().send(Authorize(req).wrap(Extras::AuthorizePost(data.into_inner(), ctx.get_pool().get().unwrap()))).await?
 }
 
 impl<Op> Handler<OAuthMessage<Op, Extras>> for AuthState where Op: OAuthOperation {
@@ -138,7 +185,7 @@ impl<Op> Handler<OAuthMessage<Op, Extras>> for AuthState where Op: OAuthOperatio
                 //todo handle oauth error
                 op.run(self.with_solicitor(solicitor))
             }
-            Extras::AuthorizePost(credentials) => {
+            Extras::AuthorizePost(credentials, conn) => {
                 let solicitor = FnSolicitor(move |_: &mut OAuthRequest, solicitation: Solicitation| { 
                     debug!("imagine logging in lmao: {:?}", credentials);
                     return OwnerConsent::Authorized("datBoi".to_owned())
@@ -149,6 +196,5 @@ impl<Op> Handler<OAuthMessage<Op, Extras>> for AuthState where Op: OAuthOperatio
             }
             _ => { op.run(&mut self.endpoint)}
         }
-        //todo!()
     }
 }

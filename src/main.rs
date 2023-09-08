@@ -20,7 +20,7 @@ use actix_web::web::Data;
 use dotenvy::dotenv;
 use log::info;
 use statty_common::context::Context;
-use statty_db::db_conn::{get_db_pool, run_migrations};
+use statty_db::db_conn::{get_db_ctx, run_migrations};
 use statty_routes::routes::config;
 use statty_config::config::Config;
 
@@ -44,7 +44,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(cors)
             .configure(|cfg| config(cfg))
-            .app_data(Data::new(Context::new_context(get_db_pool(app_config.db_url.clone()))))
+            .app_data(Data::new(Context::new_context(get_db_ctx(app_config.db_url.clone()))))
     })
         .bind(("0.0.0.0", app_config.port))?
         .run()

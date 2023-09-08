@@ -1,8 +1,8 @@
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use diesel::prelude::*;
-use diesel::{QueryId};
+use diesel::QueryId;
 use serde::{Deserialize, Serialize};
-use statty_common::date_format;
+use crate::date_format;
 
 #[derive(Queryable,Selectable,QueryId)]
 #[diesel(table_name = crate::schema::charge_sessions)]

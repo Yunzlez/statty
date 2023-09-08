@@ -53,6 +53,8 @@ env_logger = "0.10"
 regex = "1.9"
 lazy_static = "1.4"
 nom = "7.1"
+password-hash = { version = "0.5", features = ["rand_core", "alloc"] }
+argon2 = "0.5"
 
 [dependencies]
 statty_routes = { workspace = true }
@@ -61,6 +63,7 @@ statty_config = { workspace = true }
 statty_db = { workspace = true }
 actix-web = { workspace = true }
 actix-cors = { workspace = true }
+diesel = { workspace = true }
 log = { workspace = true }
 env_logger = { workspace = true }
 dotenvy = { workspace = true }

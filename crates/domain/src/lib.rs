@@ -3,3 +3,4 @@ pub mod schema;
 pub mod charge_session;
 pub mod stats;
 pub mod meta;
+pub mod date_format;
